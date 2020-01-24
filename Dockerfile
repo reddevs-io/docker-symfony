@@ -17,14 +17,12 @@ RUN set -eux; \
   $PHPIZE_DEPS \
   icu-dev \
   libzip-dev \
-  postgresql-dev \
   zlib-dev \
   ; \
   \
   docker-php-ext-configure zip; \
   docker-php-ext-install -j$(nproc) \
   intl \
-  pdo_pgsql \
   zip \
   ; \
   pecl install \
@@ -51,12 +49,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
 COPY docker/php/conf.d/symfony.prod.ini $PHP_INI_DIR/conf.d/symfony.ini
 
-RUN set -eux; \
-  { \
-  echo '[www]'; \
-  echo 'ping.path = /ping'; \
-  } | tee /usr/local/etc/php-fpm.d/docker-healthcheck.conf
-
 # Workaround to allow using PHPUnit 8 with Symfony 4.3
 ENV SYMFONY_PHPUNIT_VERSION=8.3
 
@@ -72,7 +64,5 @@ WORKDIR /srv/www
 
 COPY docker/php/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
 RUN chmod +x /usr/local/bin/docker-healthcheck
-
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD ["docker-healthcheck"]
 
 CMD ["php-fpm"]
