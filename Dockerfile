@@ -1,6 +1,4 @@
-ARG PHP_VERSION=7.4
-
-FROM php:${PHP_VERSION}-fpm-alpine
+FROM php:7.4-fpm-alpine
 
 # persistent / runtime deps
 RUN apk add --no-cache \
@@ -8,12 +6,8 @@ RUN apk add --no-cache \
   fcgi \
   file \
   gettext \
-  git \
-  bash \
-  bash-completion \
   ;
 
-ARG APCU_VERSION=5.1.18
 RUN set -eux; \
   apk add --no-cache --virtual .build-deps \
   $PHPIZE_DEPS \
@@ -26,9 +20,10 @@ RUN set -eux; \
   docker-php-ext-install -j$(nproc) \
   intl \
   zip \
+  pdo_mysql \
   ; \
   pecl install \
-  apcu-${APCU_VERSION} \
+  apcu-5.1.18 \
   ; \
   pecl clear-cache; \
   docker-php-ext-enable \
@@ -56,6 +51,10 @@ RUN set -eux; \
   composer clear-cache
 ENV PATH="${PATH}:/root/.composer/vendor/bin"
 
-WORKDIR /srv/www
+COPY .docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+RUN deluser www-data && adduser -DH -h /home/www-data -s /sbin/nologin -u 1000 www-data
+
+USER www-data
 
 CMD ["php-fpm"]
